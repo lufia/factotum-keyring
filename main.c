@@ -14,7 +14,7 @@
 static int session_id_counter = 0;
 
 DBusHandlerResult
-handle_open_session(DBusConnection *conn, DBusMessage *msg)
+opensession(DBusConnection *conn, DBusMessage *msg)
 {
 	DBusError e;
 	char *alg;
@@ -83,7 +83,7 @@ handle(DBusConnection *conn, DBusMessage *msg, void *aux)
 	// https://specifications.freedesktop.org/secret-service/latest/org.freedesktop.Secret.Service.html
 	// methods: OpenSession, CreateCollection, SearchItems, Unlock, Lock, GetSecrets, ReadAlias, SetAlias
 	if(dbus_message_is_method_call(msg, SERVICE_INTERFACE, "OpenSession"))
-		return handle_open_session(conn, msg);
+		return opensession(conn, msg);
 
 	printf("Unhandled method call: %s.%s from %s\n",
 		   dbus_message_get_interface(msg) ? dbus_message_get_interface(msg) : "(null)",
