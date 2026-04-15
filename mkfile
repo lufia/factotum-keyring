@@ -9,5 +9,7 @@ HFILES=
 
 OFILES=\
 	main.$O\
+	dbus.$O\
+	debug.$O\
 
 <$PLAN9/src/mkone

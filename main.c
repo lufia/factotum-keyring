@@ -7,6 +7,8 @@
 #include <u.h>
 #include <libc.h>
 
+#include "lib.h"
+
 #define	SERVICE_NAME			"org.lufia.factotum"
 #define	SERVICE_PATH			"/org/lufia/factotum"
 #define	SERVICE_INTERFACE		"org.lufia.factotum.Keyring"
@@ -24,21 +26,18 @@ opensessionreply(DBusConnection *conn, DBusMessage *reply)
 	dbus_message_iter_init_append(reply, &iter);
 	dbus_message_iter_open_container(&iter, DBUS_TYPE_VARIANT, DBUS_TYPE_STRING_AS_STRING, &sub);
 	dbus_message_iter_append_basic(&sub, DBUS_TYPE_STRING, &z);
-
-	snprintf(path, sizeof path, "%s/session/%d", SERVICE_PATH, nextid++);
-	p = path;
-	dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &p);
 	dbus_message_iter_close_container(&iter, &sub);
 
-	printf("  Returning session path: %s\n", path);
-
+	snprintf(path, sizeof path, "%s/session/%d", SERVICE_PATH, nextid++);
+	debugf("Path = '%s'\n", path);
+	p = path;
+	dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &p);
 	if (!dbus_connection_send(conn, reply, NULL)) {
 		fprintf(stderr, "Failed to send reply message for OpenSession\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 	dbus_connection_flush(conn);
-print("done!\n");
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
@@ -52,7 +51,6 @@ opensession(DBusConnection *conn, DBusMessage *msg)
 	DBusHandlerResult r;
 
 	dbus_error_init(&e);
-
 	alg = NULL;
 	if(!dbus_message_get_args(msg, &e, DBUS_TYPE_STRING, &alg, DBUS_TYPE_INVALID)){
 		reply = dbus_message_new_error_printf(msg, DBUS_ERROR_INVALID_ARGS, "invalid args: %s", e.message);
@@ -68,9 +66,9 @@ opensession(DBusConnection *conn, DBusMessage *msg)
 		dbus_message_iter_next(&iter);
 	if(dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_VARIANT){
 		dbus_message_iter_recurse(&iter, &iter2);
-		printf("Received OpenSession call with algorithm: %s, and variant input type: %c\n", alg, dbus_message_iter_get_arg_type(&iter2));
+		debugf("Received OpenSession call with algorithm: %s, and variant input type: %c\n", alg, dbus_message_iter_get_arg_type(&iter2));
 	}else{
-		printf("Received OpenSession call with algorithm: %s, and no variant input.\n", alg);
+		debugf("Received OpenSession call with algorithm: %s, and no variant input.\n", alg);
 	}
 
 	reply = dbus_message_new_method_return(msg);
@@ -80,7 +78,7 @@ opensession(DBusConnection *conn, DBusMessage *msg)
 	}
 	r = opensessionreply(conn, reply);
 	dbus_message_unref(reply);
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return r;
 }
 
 DBusHandlerResult
@@ -102,7 +100,7 @@ handle_properties_get(DBusConnection *conn, DBusMessage *msg)
 
 	reply = dbus_message_new_method_return(msg);
 	if (!reply) {
-		fprintf(stderr, "Failed to create reply message for Get\n");
+		debugf("Failed to create reply message for Get\n");
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
@@ -121,7 +119,7 @@ handle_properties_get(DBusConnection *conn, DBusMessage *msg)
 	}
 
 	if (!dbus_connection_send(conn, reply, NULL)) {
-		fprintf(stderr, "Failed to send reply message for Get\n");
+		debugf("Failed to send reply message for Get\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
@@ -155,7 +153,7 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 
 	reply = dbus_message_new_method_return(msg);
 	if (!reply) {
-		fprintf(stderr, "Failed to create reply message for GetAll\n");
+		debugf("Failed to create reply message for GetAll\n");
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
@@ -180,7 +178,7 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 	dbus_message_iter_close_container(&iter, &dict_iter);
 
 	if (!dbus_connection_send(conn, reply, NULL)) {
-		fprintf(stderr, "Failed to send reply message for GetAll\n");
+		debugf("Failed to send reply message for GetAll\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
@@ -215,9 +213,8 @@ handle(DBusConnection *conn, DBusMessage *msg, void *aux)
 {
 	DBusMessage *reply;
 	Func *fp;
-print("handle!\n");
 
-	printf("handle method call: %s.%s from %s\n",
+	debugf("handle method call: %s.%s from %s\n",
 	       dbus_message_get_interface(msg) ? dbus_message_get_interface(msg) : "(null)",
 	       dbus_message_get_member(msg) ? dbus_message_get_member(msg) : "(null)",
 	       dbus_message_get_sender(msg) ? dbus_message_get_sender(msg) : "(null)");
@@ -225,7 +222,7 @@ print("handle!\n");
 		if(dbus_message_is_method_call(msg, fp->service, fp->method))
 			return fp->run(conn, msg);
 	}
-	printf("Unhandled method call: %s.%s from %s\n",
+	debugf("Unhandled method call: %s.%s from %s\n",
 	       dbus_message_get_interface(msg) ? dbus_message_get_interface(msg) : "(null)",
 	       dbus_message_get_member(msg) ? dbus_message_get_member(msg) : "(null)",
 	       dbus_message_get_sender(msg) ? dbus_message_get_sender(msg) : "(null)");
@@ -241,12 +238,27 @@ static DBusObjectPathVTable vtab = {
 	.message_function = handle,
 };
 
+static void
+usage(void)
+{
+	fprintf(stderr, "usage: %s [-d]\n", argv0);
+	exit(2);
+}
+
 int
-main()
+main(int argc, char **argv)
 {
 	DBusConnection *conn;
 	DBusError e;
 	int rv, flags;
+
+	ARGBEGIN {
+	case 'd':
+		debug++;
+		break;
+	default:
+		usage();
+	} ARGEND
 
 	dbus_error_init(&e);
 	conn = dbus_bus_get(DBUS_BUS_SESSION, &e);
