@@ -32,7 +32,7 @@ opensessionreply(DBusConnection *conn, DBusMessage *reply)
 	debugf("Path = '%s'\n", path);
 	p = path;
 	dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &p);
-	if (!dbus_connection_send(conn, reply, NULL)) {
+	if(!dbus_connection_send(conn, reply, NULL)){
 		fprintf(stderr, "Failed to send reply message for OpenSession\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
@@ -90,35 +90,35 @@ handle_properties_get(DBusConnection *conn, DBusMessage *msg)
 	char *interface_name, *property_name;
 
 	dbus_error_init(&e);
-	if (!dbus_message_get_args(msg, &e,
+	if(!dbus_message_get_args(msg, &e,
 	                           DBUS_TYPE_STRING, &interface_name,
 	                           DBUS_TYPE_STRING, &property_name,
-	                           DBUS_TYPE_INVALID)) {
+	                           DBUS_TYPE_INVALID)){
 		reply = dbus_message_new_error_printf(msg, DBUS_ERROR_INVALID_ARGS, "Invalid arguments for Get: %s", e.message);
 		goto fail;
 	}
 
 	reply = dbus_message_new_method_return(msg);
-	if (!reply) {
+	if(!reply){
 		debugf("Failed to create reply message for Get\n");
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
-	if (strcmp(interface_name, SERVICE_INTERFACE) == 0 && strcmp(property_name, "Collections") == 0) {
+	if(strcmp(interface_name, SERVICE_INTERFACE) == 0 && strcmp(property_name, "Collections") == 0){
 		dbus_message_iter_init_append(reply, &iter);
 		dbus_message_iter_open_container(&iter, DBUS_TYPE_VARIANT, "ao", &sub_iter); // "ao" for array of object paths
 		dbus_message_iter_open_container(&sub_iter, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH_AS_STRING, &array_iter);
 		// Currently, no collections, so return an empty array.
 		dbus_message_iter_close_container(&sub_iter, &array_iter);
 		dbus_message_iter_close_container(&iter, &sub_iter);
-	} else {
+	}else{
 		// Property not found or not supported
 		dbus_message_unref(reply);
 		reply = dbus_message_new_error_printf(msg, DBUS_ERROR_UNKNOWN_PROPERTY, "Unknown property %s on interface %s", property_name, interface_name);
 		goto fail;
 	}
 
-	if (!dbus_connection_send(conn, reply, NULL)) {
+	if(!dbus_connection_send(conn, reply, NULL)){
 		debugf("Failed to send reply message for Get\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
@@ -128,7 +128,7 @@ handle_properties_get(DBusConnection *conn, DBusMessage *msg)
 	return DBUS_HANDLER_RESULT_HANDLED;
 
 fail:
-	if (reply) {
+	if(reply){
 		dbus_connection_send(conn, reply, NULL);
 		dbus_message_unref(reply);
 	}
@@ -144,15 +144,15 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 	char *interface_name;
 
 	dbus_error_init(&e);
-	if (!dbus_message_get_args(msg, &e,
+	if(!dbus_message_get_args(msg, &e,
 	                           DBUS_TYPE_STRING, &interface_name,
-	                           DBUS_TYPE_INVALID)) {
+	                           DBUS_TYPE_INVALID)){
 		reply = dbus_message_new_error_printf(msg, DBUS_ERROR_INVALID_ARGS, "Invalid arguments for GetAll: %s", e.message);
 		goto fail;
 	}
 
 	reply = dbus_message_new_method_return(msg);
-	if (!reply) {
+	if(!reply){
 		debugf("Failed to create reply message for GetAll\n");
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
@@ -160,7 +160,7 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 	dbus_message_iter_init_append(reply, &iter);
 	dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "{sv}", &dict_iter); // Array of dictionary entries (string, variant)
 
-	if (strcmp(interface_name, SERVICE_INTERFACE) == 0) {
+	if(strcmp(interface_name, SERVICE_INTERFACE) == 0){
 		// Collections property
 		dbus_message_iter_open_container(&dict_iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry_iter);
 		dbus_message_iter_append_basic(&entry_iter, DBUS_TYPE_STRING, "Collections");
@@ -170,14 +170,14 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 		dbus_message_iter_close_container(&var_iter, &array_iter);
 		dbus_message_iter_close_container(&entry_iter, &var_iter);
 		dbus_message_iter_close_container(&dict_iter, &entry_iter);
-	} else {
+	}else{
 		// No properties for other interfaces on this object
 		fprintf(stderr, "No properties found for interface %s\n", interface_name);
 	}
 
 	dbus_message_iter_close_container(&iter, &dict_iter);
 
-	if (!dbus_connection_send(conn, reply, NULL)) {
+	if(!dbus_connection_send(conn, reply, NULL)){
 		debugf("Failed to send reply message for GetAll\n");
 		dbus_message_unref(reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
@@ -187,7 +187,7 @@ handle_properties_getall(DBusConnection *conn, DBusMessage *msg)
 	return DBUS_HANDLER_RESULT_HANDLED;
 
 fail:
-	if (reply) {
+	if(reply){
 		dbus_connection_send(conn, reply, NULL);
 		dbus_message_unref(reply);
 	}
@@ -227,7 +227,7 @@ handle(DBusConnection *conn, DBusMessage *msg, void *aux)
 	       dbus_message_get_member(msg) ? dbus_message_get_member(msg) : "(null)",
 	       dbus_message_get_sender(msg) ? dbus_message_get_sender(msg) : "(null)");
 	reply = dbus_message_new_error_printf(msg, "org.freedesktop.Secret.Service.Error.NotImplemented", "Method %s not implemented.", dbus_message_get_member(msg));
-	if (reply) {
+	if(reply){
 		dbus_connection_send(conn, reply, NULL);
 		dbus_message_unref(reply);
 	}
@@ -276,7 +276,7 @@ main(int argc, char **argv)
 
 	if(!dbus_connection_register_object_path(conn, SERVICE_PATH, &vtab, NULL))
 		sysfatal("failed to register object path: %s\n", SERVICE_PATH);
-	while(dbus_connection_read_write_dispatch(conn, -1)) {
+	while(dbus_connection_read_write_dispatch(conn, -1)){
 		// wait for
 	}
 	dbus_connection_unref(conn);
