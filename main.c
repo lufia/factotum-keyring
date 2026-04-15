@@ -7,9 +7,9 @@
 #include <u.h>
 #include <libc.h>
 
-#define	SERVICE_NAME			"org.freedesktop.secrets"
-#define	SERVICE_PATH			"/org/freedesktop/secrets"
-#define	SERVICE_INTERFACE		"org.freedesktop.Secret.Service"
+#define	SERVICE_NAME			"org.lufia.factotum"
+#define	SERVICE_PATH			"/org/lufia/factotum"
+#define	SERVICE_INTERFACE		"org.lufia.factotum.Keyring"
 #define	PROPERTIES_INTERFACE	"org.freedesktop.DBus.Properties"
 
 static int nextid = 0;
